@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+garminconnect
+garth
+pydantic
+python-dotenv
+zhipuai
+sniffio
