@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from database import engine, Base
 from core.garmin_client import init_garmin_client
 from core.ai_nutritionist import identify_food
@@ -16,6 +17,9 @@ load_dotenv()
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI Health Dashboard")
+
+# 启用 GZip 响应压缩，减少传输带宽（默认压>500字节的数据）
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 # 解决跨域问题，允许 Vue 本地发来的请求
 app.add_middleware(

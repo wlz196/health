@@ -10,6 +10,7 @@
        
        <van-uploader 
           :after-read="onRead" 
+          :before-read="beforeRead"
           accept="image/*"
           :max-count="1"
           capture="camera"
@@ -82,11 +83,31 @@
 
 <script setup>
 import { ref } from 'vue'
+import Compressor from 'compressorjs'
 
 const fileList = ref([])
 const foodText = ref('')
 const analyzing = ref(false)
 const result = ref(null)
+
+// 压缩照片：极大地减少上传消耗和后端解码压力
+const beforeRead = (file) => {
+  return new Promise((resolve) => {
+    new Compressor(file, {
+      quality: 0.6,
+      maxWidth: 800, // 调整图像宽度，AI 足以识别即可，无需几千万像素
+      success(result) {
+        // 构建出带有原始文件名的 File 格式以便于后续转 Base64 读取
+        const compressedFile = new File([result], file.name, { type: result.type, lastModified: Date.now() });
+        resolve(compressedFile);
+      },
+      error(err) {
+        console.error('压缩失败:', err.message);
+        resolve(file); // 失败时退回原文件，确保业务不中断
+      },
+    });
+  });
+}
 
 const onAnalyzeText = async () => {
   if (!foodText.value.trim()) return
