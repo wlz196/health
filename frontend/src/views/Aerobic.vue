@@ -25,7 +25,14 @@ const activities = ref([])
 const loading = ref(true)
 
 const aerobicActivities = computed(() => {
-  return activities.value.filter(a => a.type === 'running' || a.type === 'cycling' || a.type === 'walking' || a.type === 'swimming')
+  return activities.value.filter(a => 
+      a.type === 'running' || 
+      a.type === 'treadmill_running' ||
+      a.type === 'cycling' || 
+      a.type === 'indoor_cycling' ||
+      a.type === 'walking' || 
+      a.type === 'elliptical' ||
+      a.type === 'swimming')
 })
 
 onMounted(async () => {
