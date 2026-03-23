@@ -16,6 +16,7 @@ sudo apt-get install -y nginx python3-pip python3-venv git
 # 2. 初始化后端代码与沙盒环境
 echo "[2/4] 正在安装 Python 后端多路高并发运行依赖..."
 cd /var/www/health_dash/backend
+rm -rf venv  # 🌟 强制清理可能从 Mac 误推上去的旧沙盒环境，防止架构错乱
 python3 -m venv venv
 # 隐式激活直接绝对路径调用
 ./venv/bin/pip install -r requirements.txt
