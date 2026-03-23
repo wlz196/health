@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 bg-gray-50 min-h-screen pb-20">
     <div class="flex justify-between items-center mb-2 mt-2">
-       <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">无氧训练</h1>
+       <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">训练记录</h1>
        <!-- 二分化切换 -->
        <div class="flex bg-gray-100 p-0.5 rounded-full border border-gray-200/50">
           <div v-for="cat in ['上半身', '下半身']" :key="cat" 
