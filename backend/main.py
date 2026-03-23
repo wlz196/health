@@ -6,7 +6,7 @@ from database import engine, Base, get_db
 from models import FoodLogs, SavedFood, UserConfig, WeightLog, AnaerobicLog, User
 from core.garmin_client import init_garmin_client
 from core.ai_nutritionist import identify_food
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 import os
 import json
@@ -16,6 +16,13 @@ from dotenv import load_dotenv
 
 # 加载环境变量 (包括 GEMINI_API_KEY)
 load_dotenv()
+
+# 🌟 统一设置北京时间时区 (UTC+8)
+CST = timezone(timedelta(hours=8))
+
+def get_beijing_now():
+    """获取当前北京时间"""
+    return datetime.now(CST)
 
 # 初始化数据库表
 Base.metadata.create_all(bind=engine)
@@ -96,7 +103,7 @@ def login(item: UserAuth, db: Session = Depends(get_db)):
 @app.get("/api/overview")
 def get_daily_overview(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取今日总览（卡路里、步数等）"""
-    today = date.today().isoformat()
+    today = get_beijing_now().date().isoformat()
     
     # 累加本地饮食记录中的热量
     today_logs = db.query(FoodLogs).filter(FoodLogs.date == today, FoodLogs.user_id == current_user.id).all()
@@ -330,7 +337,7 @@ def delete_anaerobic_log(log_id: int, db: Session = Depends(get_db), current_use
 @app.get("/api/intake/logs", response_model=list[FoodLogResponse])
 def get_food_logs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取今日的饮食记录"""
-    today = date.today().isoformat()
+    today = get_beijing_now().date().isoformat()
     logs = db.query(FoodLogs).filter(FoodLogs.date == today, FoodLogs.user_id == current_user.id).all()
     
     result = []
@@ -375,8 +382,9 @@ def get_food_history(db: Session = Depends(get_db), current_user: User = Depends
 @app.post("/api/intake/logs", response_model=FoodLogResponse)
 def add_food_log(item: FoodLogCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """添加一条饮食记录"""
-    today = date.today().isoformat()
-    current_time = item.time or datetime.now().strftime("%H:%M")
+    now_cst = get_beijing_now()
+    today = now_cst.date().isoformat()
+    current_time = item.time or now_cst.strftime("%H:%M")
     
     new_log = FoodLogs(
         date=today,
@@ -423,7 +431,7 @@ def get_weight_logs(db: Session = Depends(get_db), current_user: User = Depends(
 @app.post("/api/weight", response_model=WeightLogResponse)
 def add_weight_log(item: WeightLogCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """记录今日体重"""
-    today = item.date or date.today().isoformat()
+    today = item.date or get_beijing_now().date().isoformat()
     existing = db.query(WeightLog).filter(WeightLog.date == today, WeightLog.user_id == current_user.id).first()
     if existing:
         existing.weight = item.weight
@@ -466,7 +474,7 @@ def get_anaerobic_logs(db: Session = Depends(get_db), current_user: User = Depen
 @app.post("/api/anaerobic", response_model=AnaerobicLogResponse)
 def add_anaerobic_log(item: AnaerobicLogCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from models import AnaerobicLog
-    today = item.date or date.today().isoformat()
+    today = item.date or get_beijing_now().date().isoformat()
     new_log = AnaerobicLog(
         date=today,
         exercise_name=item.exercise_name,
