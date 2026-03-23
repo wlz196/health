@@ -156,6 +156,11 @@
        </div>
        <div v-else class="space-y-3">
           <div v-for="log in dailyLogs" :key="log.id" class="bg-white rounded-2xl p-4 shadow-sm flex flex-row items-center justify-between border-l-4 border-orange-400 relative">
+             <!-- 删除按钮 -->
+             <div class="absolute top-2 right-2 text-gray-300 hover:text-red-500 cursor-pointer p-1 active:scale-95 transition-all" @click.stop="deleteLog(log.id)">
+                <van-icon name="delete-o" class="text-xs" />
+             </div>
+             
              <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1.5">
                    <span class="text-xs text-orange-500 font-black bg-orange-50 px-2 py-0.5 rounded mr-1 tracking-wider">{{log.time || '--:--'}}</span>
@@ -217,6 +222,21 @@ const fetchLogs = async () => {
         }
     } catch (e) {
         console.error('Failed to fetch logs', e)
+    }
+}
+
+const deleteLog = async (logId) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('确定要删除这条饮食记录吗？')) return
+    try {
+        const res = await fetch(`/api/intake/logs/${logId}`, { method: 'DELETE' })
+        if (res.ok) {
+            fetchLogs() // 刷新列表
+        } else {
+            alert('删除失败')
+        }
+    } catch (e) {
+        console.error('Failed to delete log', e)
     }
 }
 

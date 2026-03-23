@@ -78,12 +78,17 @@
        <div v-if="loading" class="text-center py-6"><van-loading /></div>
        <div v-else-if="filteredLogs.length === 0" class="text-center py-6 text-gray-400 text-sm">暂无本拆分记录，去撸铁吧！</div>
        <div v-else class="space-y-3">
-          <div v-for="lg in filteredLogs" :key="lg.id" class="flex justify-between items-center bg-gray-50 px-4 py-3 rounded-xl border border-gray-100/50">
+          <div v-for="lg in filteredLogs" :key="lg.id" class="flex justify-between items-center bg-gray-50 px-4 py-3 rounded-xl border border-gray-100/50 relative">
+             <!-- 删除按钮 -->
+             <div class="absolute top-1 right-1 text-gray-300 hover:text-red-500 cursor-pointer p-0.5 active:scale-95" @click.stop="deleteExercise(lg.id)">
+                <van-icon name="delete-o" class="text-[10px]" />
+             </div>
+             
              <div>
                 <span class="text-sm font-black text-gray-800">{{ lg.exercise_name }}</span>
                 <p class="text-[10px] text-gray-400 mt-0.5">{{ lg.date }}</p>
              </div>
-             <div class="text-right">
+             <div class="text-right mr-3">
                 <span class="text-lg font-black text-indigo-600">{{ lg.weight }} <span class="text-xs font-normal text-gray-400">kg</span></span>
                 <p class="text-[10px] text-gray-500 mt-0.5">{{ lg.sets }}组 x {{ lg.reps }}次</p>
              </div>
@@ -154,6 +159,19 @@ const fetchLogs = async () => {
         logs.value = await res.json()
     } catch (e) { console.error(e) }
     finally { loading.value = false }
+}
+
+const deleteExercise = async (id) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('确定要删除这条训练记录吗？')) return
+    try {
+        const res = await fetch(`/api/anaerobic/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+            fetchLogs() // 刷新列表
+        } else {
+            alert('删除失败')
+        }
+    } catch (e) { console.error(e) }
 }
 
 const submitLog = async () => {

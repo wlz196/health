@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
-from models import FoodLogs, SavedFood, UserConfig, WeightLog
+from models import FoodLogs, SavedFood, UserConfig, WeightLog, AnaerobicLog, User
 from core.garmin_client import init_garmin_client
 from core.ai_nutritionist import identify_food
 from datetime import date, datetime
@@ -294,6 +294,36 @@ def delete_saved_food(item_id: int, db: Session = Depends(get_db), current_user:
     if not food:
         raise HTTPException(status_code=404, detail="未找到该食物")
     db.delete(food)
+    db.commit()
+    return {"status": "ok"}
+
+@app.delete("/api/intake/logs/{log_id}")
+def delete_food_log(log_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """删除单条饮食记录"""
+    log = db.query(FoodLogs).filter(FoodLogs.id == log_id, FoodLogs.user_id == current_user.id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="未找到该饮食记录")
+    db.delete(log)
+    db.commit()
+    return {"status": "ok"}
+
+@app.delete("/api/weight/{log_id}")
+def delete_weight_log(log_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """删除单条体重记录"""
+    log = db.query(WeightLog).filter(WeightLog.id == log_id, WeightLog.user_id == current_user.id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="未找到该体重记录")
+    db.delete(log)
+    db.commit()
+    return {"status": "ok"}
+
+@app.delete("/api/anaerobic/{log_id}")
+def delete_anaerobic_log(log_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """删除单条训练记录"""
+    log = db.query(AnaerobicLog).filter(AnaerobicLog.id == log_id, AnaerobicLog.user_id == current_user.id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="未找到该训练记录")
+    db.delete(log)
     db.commit()
     return {"status": "ok"}
 

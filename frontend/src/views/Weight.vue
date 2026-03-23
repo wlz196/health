@@ -58,9 +58,14 @@
        <h2 class="text-sm font-bold text-gray-700 mb-4">历史记录</h2>
        <div v-if="logs.length === 0" class="text-center py-6 text-gray-400 text-sm">暂无体重记录</div>
        <div v-else class="space-y-2">
-          <div v-for="log in reversedLogs" :key="log.id" class="flex justify-between items-center bg-gray-50 px-4 py-3 rounded-xl">
+          <div v-for="log in reversedLogs" :key="log.id" class="flex justify-between items-center bg-gray-50 px-4 py-3 rounded-xl relative">
+             <!-- 删除按钮 -->
+             <div class="absolute top-1 right-1 text-gray-300 hover:text-red-500 cursor-pointer p-0.5 active:scale-95" @click.stop="deleteWeight(log.id)">
+                <van-icon name="delete-o" class="text-[10px]" />
+             </div>
+             
              <span class="text-xs text-gray-500 font-medium">{{ log.date }}</span>
-             <span class="text-lg font-black text-gray-800">{{ log.weight }} <span class="text-xs font-normal text-gray-400">kg</span></span>
+             <span class="text-lg font-black text-gray-800 mr-2">{{ log.weight }} <span class="text-xs font-normal text-gray-400">kg</span></span>
           </div>
        </div>
     </div>
@@ -82,6 +87,21 @@ const fetchLogs = async () => {
     try {
         const res = await fetch('/api/weight')
         logs.value = await res.json()
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const deleteWeight = async (id) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('确定要删除这条体重记录吗？')) return
+    try {
+        const res = await fetch(`/api/weight/${id}`, { method: 'DELETE' })
+        if (res.ok) {
+            fetchLogs() // 刷新列表
+        } else {
+            alert('删除失败')
+        }
     } catch (e) {
         console.error(e)
     }
