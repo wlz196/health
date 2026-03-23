@@ -1,7 +1,7 @@
 <template>
   <div class="p-4 bg-gray-50 min-h-screen">
     <div class="flex justify-between items-center mb-6 mt-2">
-      <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">健康总览</h1>
+      <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">我的今日</h1>
       <div v-if="loading" class="text-sm text-gray-500 flex items-center">
         <van-loading size="16px" class="mr-1"/> 同步中
       </div>

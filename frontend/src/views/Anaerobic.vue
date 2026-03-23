@@ -105,7 +105,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 const loading = ref(true)
 const submitting = ref(false)
 const logs = ref([])
-const currentCategory = ref('上半身')
+const currentCategory = ref('')
 const chartExercise = ref('')
 
 const form = ref({
@@ -137,6 +137,7 @@ const quickFill = (lg) => {
 
 // === 分组过滤列表 ===
 const filteredLogs = computed(() => {
+    if (!currentCategory.value) return logs.value // 🌟 默认未选择时，展现今日全局所有历程
     return logs.value.filter(l => l.category === currentCategory.value)
 })
 
@@ -177,6 +178,11 @@ const deleteExercise = async (id) => {
 const submitLog = async () => {
     const f = form.value
     if (!f.exercise_name || !f.weight || !f.sets || !f.reps) return
+    if (!currentCategory.value) {
+        // eslint-disable-next-line no-alert
+        alert('请先在顶部选择训练部位（上半身或下半身）')
+        return
+    }
     submitting.value = true
     try {
         await fetch('/api/anaerobic', {
