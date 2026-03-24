@@ -126,7 +126,8 @@
             <van-form ref="manualFormRef">
               <van-cell-group inset class="!mx-0 border border-gray-100 mb-3">
                 <van-field v-model="manualForm.food_name" name="food_name" label="食物名称" placeholder="输入食物名称" :rules="[{ required: true, message: '请填写食物名称' }]" />
-                <van-field v-model="manualForm.kcal" type="digit" name="kcal" label="热量(kcal)" placeholder="输入总热量" :rules="[{ required: true, message: '请填写热量' }]" />
+                <van-field v-model="manualForm.kcal" type="digit" name="kcal" label="热量(kcal)" placeholder="输入大卡" :rules="[{ required: true, message: '请填写热量' }]" @input="onKcalInput" />
+                <van-field v-model="manualForm.kj" type="digit" label="热量(kJ)" placeholder="或输入千焦" @input="onKjInput" />
                 <van-field v-model="manualForm.protein" type="digit" name="protein" label="蛋白质(g)" placeholder="选填" />
                 <van-field v-model="manualForm.fat" type="digit" name="fat" label="脂肪(g)" placeholder="选填" />
                 <van-field v-model="manualForm.carb" type="digit" name="carb" label="碳水(g)" placeholder="选填" />
@@ -203,11 +204,28 @@ const isSubmitting = ref(false)
 const manualForm = ref({
   food_name: '',
   kcal: '',
+  kj: '',
   protein: '',
   fat: '',
   carb: '',
   save_quick: false
 })
+
+const onKcalInput = () => {
+    if (manualForm.value.kcal) {
+        manualForm.value.kj = Math.round(parseFloat(manualForm.value.kcal) * 4.184).toString()
+    } else {
+        manualForm.value.kj = ''
+    }
+}
+
+const onKjInput = () => {
+    if (manualForm.value.kj) {
+        manualForm.value.kcal = Math.round(parseFloat(manualForm.value.kj) / 4.184).toString()
+    } else {
+        manualForm.value.kcal = ''
+    }
+}
 
 const fetchLogs = async () => {
     try {
