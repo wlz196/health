@@ -4,7 +4,7 @@ import App from './App.vue'
 import router from './router'
 
 // 引入 Vant 组件
-import { Tabbar, TabbarItem, Button, Loading, Circle, Icon, Uploader, Field, CellGroup, Checkbox, Form, Tab, Tabs, Radio, RadioGroup, Dialog, Popup, Tag } from 'vant'
+import { Tabbar, TabbarItem, Button, Loading, Circle, Icon, Uploader, Field, CellGroup, Checkbox, Form, Tab, Tabs, Radio, RadioGroup, Dialog, Popup, Tag, Progress, Search, TimePicker } from 'vant'
 import 'vant/lib/index.css'
 
 const app = createApp(App)
@@ -28,6 +28,9 @@ app.use(RadioGroup)
 app.use(Dialog)
 app.use(Popup)
 app.use(Tag)
+app.use(Progress)
+app.use(Search)
+app.use(TimePicker)
 
 // === 全局 Fetch 拦截器：自动注入 JWT Token ===
 const originalFetch = window.fetch;
