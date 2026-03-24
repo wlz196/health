@@ -43,7 +43,6 @@
               :before-read="beforeRead"
               accept="image/*"
               :max-count="1"
-              capture="camera"
               v-model="fileList"
            >
              <van-button icon="plus" round type="primary" color="rgba(255,255,255,0.2)" class="font-bold border-2 border-white backdrop-blur-md">拍照或选图分析</van-button>
