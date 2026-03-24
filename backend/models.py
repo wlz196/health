@@ -53,9 +53,9 @@ class SavedFood(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     kcal = Column(Integer)
-    protein = Column(Integer, default=0)
-    fat = Column(Integer, default=0)
-    carb = Column(Integer, default=0)
+    protein = Column(Float, default=0.0)
+    fat = Column(Float, default=0.0)
+    carb = Column(Float, default=0.0)
     is_per_100g = Column(Boolean, default=False)  # 🌟 是否为100g配料表模板
     user_id = Column(Integer, index=True) # 🌟 绑定用户
 

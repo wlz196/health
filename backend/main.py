@@ -251,9 +251,9 @@ def update_config(item: ConfigUpdateRequest, db: Session = Depends(get_db), curr
 class SavedFoodCreateAndResponse(BaseModel):
     name: str
     kcal: int
-    protein: int = 0
-    fat: int = 0
-    carb: int = 0
+    protein: float = 0.0
+    fat: float = 0.0
+    carb: float = 0.0
     is_per_100g: bool = False
 
 class SavedFoodItemResponse(SavedFoodCreateAndResponse):
