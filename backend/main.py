@@ -254,6 +254,7 @@ class SavedFoodCreateAndResponse(BaseModel):
     protein: int = 0
     fat: int = 0
     carb: int = 0
+    is_per_100g: bool = False
 
 class SavedFoodItemResponse(SavedFoodCreateAndResponse):
     id: int
@@ -287,6 +288,7 @@ def add_saved_food(item: SavedFoodCreateAndResponse, db: Session = Depends(get_d
         protein=item.protein,
         fat=item.fat,
         carb=item.carb,
+        is_per_100g=item.is_per_100g,
         user_id=current_user.id
     )
     db.add(new_food)
