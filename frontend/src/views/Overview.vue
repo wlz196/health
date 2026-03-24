@@ -8,33 +8,40 @@
       <div v-else class="flex items-center gap-2">
          <div @click="showSettings = true" class="bg-indigo-50/80 text-indigo-600 px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer border border-indigo-100/50 hover:bg-indigo-100 transition-all text-[11px] font-medium shadow-sm">
             <van-icon name="setting-o" class="text-xs" />
-            <span>设置基础代谢</span>
+            <span>基础代谢 BMR</span>
          </div>
       </div>
     </div>
 
     <div v-if="!loading" class="space-y-4">
-      <!-- 核心热量环形卡片区 (利用 Tailwind 完成精美渐变) -->
+      <!-- 📊 核心热量环形卡片区 -->
       <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
         <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+        
         <div class="flex justify-between items-start mb-3">
            <div>
-              <h2 class="text-xs font-medium opacity-80 mb-1">今日建议摄入热量</h2>
+              <h2 class="text-xs font-medium opacity-80 mb-1">今日建议摄入</h2>
               <div class="text-5xl font-black tracking-tighter">{{ targetKcal }}</div>
            </div>
+           
            <div class="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] font-bold self-start mt-1 flex items-center gap-1 border border-white/5">
-              <span class="opacity-80">缺口</span>
-              <span class="font-black" :class="currentDeficit >= 0 ? '!text-green-300' : '!text-rose-300'">
-                 {{ Math.round((1 - currentConfig.qPct) * 100) }}% TDEE
+              <span class="opacity-70">实时缺口</span>
+              <span class="font-black" :class="currentDeficit >= 0 ? '!text-emerald-300' : '!text-rose-300'">
+                 {{ Math.round(currentDeficit) }} kcal
               </span>
            </div>
         </div>
         
-        <!-- 进度条可视化 -->
+        <!-- 🎯 进度条可视化 -->
         <div class="mt-4 pt-4 border-t border-white/10">
            <div class="flex justify-between text-xs opacity-90 mb-1.5">
               <span>已吃: <strong class="text-white">{{ metrics.consumedKilocalories || 0 }}</strong> kcal</span>
-              <span>目标: <strong class="text-white">{{ targetKcal }}</strong> kcal</span>
+              <span>
+                 剩余: 
+                 <strong :class="remainingKcal >= 0 ? '!text-emerald-300' : '!text-rose-300'" class="font-black">
+                    {{ remainingKcal }}
+                 </strong> kcal
+              </span>
            </div>
            <div class="w-full h-2.5 bg-white/15 rounded-full overflow-hidden">
               <div class="h-full bg-gradient-to-r from-emerald-400 to-green-300 rounded-full transition-all duration-500" 
@@ -42,7 +49,7 @@
            </div>
         </div>
 
-        <!-- BMR & TDEE 辅助小卡数据 -->
+        <!-- 🧬 BMR & TDEE 辅助数据 -->
         <div class="flex justify-between text-[10px] mt-3 pt-3 border-t border-white/10 opacity-80">
            <div>
               <span>基础代谢 BMR: </span>
@@ -55,7 +62,7 @@
         </div>
       </div>
 
-      <!-- 今日模式点选 -->
+      <!-- 🏃‍♂️ 今日运动模式点选 -->
       <div class="bg-white rounded-3xl p-5 shadow-sm space-y-4 mb-4">
          <h2 class="text-xs font-bold text-gray-400 tracking-wider">今日运动模式</h2>
          <div class="grid grid-cols-5 gap-2">
@@ -67,16 +74,15 @@
                <span class="text-[9px] mt-0.5 opacity-70">✖️{{ cfg.qPct }}</span>
             </div>
          </div>
-         <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50">
-            <p class="text-[11px] text-indigo-800 font-medium flex items-center gap-1">
-               <span>🎯 目标摄入:</span> 
-               <span class="font-bold text-indigo-600">{{ targetKcal }} kcal</span>
+         <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/30">
+            <p class="text-[10px] text-indigo-700 font-medium flex items-center gap-1 leading-relaxed">
+               <van-icon name="light" class="text-indigo-400 text-xs" />
+               <span>{{ currentConfig.tip }}</span>
             </p>
-            <p class="text-[10px] text-gray-400 mt-1 leading-relaxed">{{ currentConfig.tip }}</p>
          </div>
       </div>
 
-      <!-- 营养素分配卡片 -->
+      <!-- 🥑 营养素分配卡片 -->
       <div class="bg-white rounded-3xl p-5 shadow-sm space-y-3">
          <!-- 营养素分配进度 -->
          <div class="pt-2">
@@ -87,8 +93,8 @@
                <!-- 碳水 -->
                <div>
                   <div class="flex justify-between mb-1">
-                     <span class="text-sky-700 font-medium">🌾 碳水 (Carb)</span>
-                     <span class="text-gray-400">{{ metrics.consumedMacros?.carb || 0 }} / {{ macroAlloc.carb }} g</span>
+                      <span class="text-sky-700 font-medium">🌾 碳水 (Carb)</span>
+                      <span class="text-gray-400">{{ metrics.consumedMacros?.carb || 0 }} / {{ macroAlloc.carb }} g</span>
                   </div>
                   <div class="w-full h-1.5 bg-sky-50 rounded-full overflow-hidden border border-sky-100/20">
                      <div class="h-full bg-gradient-to-r from-sky-400 to-sky-500 rounded-full transition-all" 
@@ -99,8 +105,8 @@
                <!-- 蛋白 -->
                <div>
                   <div class="flex justify-between mb-1">
-                     <span class="text-rose-700 font-medium">🥩 蛋白质 (Prot)</span>
-                     <span class="text-gray-400">{{ metrics.consumedMacros?.protein || 0 }} / {{ macroAlloc.protein }} g</span>
+                      <span class="text-rose-700 font-medium">🥩 蛋白质 (Prot)</span>
+                      <span class="text-gray-400">{{ metrics.consumedMacros?.protein || 0 }} / {{ macroAlloc.protein }} g</span>
                   </div>
                   <div class="w-full h-1.5 bg-rose-50 rounded-full overflow-hidden border border-rose-100/20">
                      <div class="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full transition-all" 
@@ -111,8 +117,8 @@
                <!-- 脂肪 -->
                <div>
                   <div class="flex justify-between mb-1">
-                     <span class="text-amber-700 font-medium">🥑 脂肪 (Fat)</span>
-                     <span class="text-gray-400">{{ metrics.consumedMacros?.fat || 0 }} / {{ macroAlloc.fat }} g</span>
+                      <span class="text-amber-700 font-medium">🥑 脂肪 (Fat)</span>
+                      <span class="text-gray-400">{{ metrics.consumedMacros?.fat || 0 }} / {{ macroAlloc.fat }} g</span>
                   </div>
                   <div class="w-full h-1.5 bg-amber-50 rounded-full overflow-hidden border border-amber-100/20">
                      <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all" 
@@ -122,10 +128,9 @@
             </div>
          </div>
       </div>
-
-      
     </div>
-    <!-- 设置弹窗 -->
+
+    <!-- ⚙️ 设置基础代谢弹窗 -->
     <van-dialog v-model:show="showSettings" title="设置基础数据" show-cancel-button @confirm="saveConfig">
       <div class="px-4 py-2 space-y-2">
          <van-field v-model="heightValue" type="number" label="身高 (cm)" placeholder="请输入身高" class="rounded-xl bg-gray-50 border-0" />
@@ -149,7 +154,6 @@
                <van-radio name="1.725" icon-size="14px" class="!flex">1.725 - 强度（每周6-7天运动）</van-radio>
             </van-radio-group>
          </div>
-         <!-- 🔥 直接设定 BMR -->
          <p class="text-[10px] text-gray-400 px-1 mt-1 mb-1">或者：直接设定一个固定 BMR 数值</p>
          <van-field v-model="bmrValue" type="digit" label="固定 BMR" placeholder="基础代谢卡路里" class="rounded-xl bg-gray-50 border-0" />
       </div>
@@ -208,7 +212,6 @@ const saveConfig = async () => {
   }
 }
 
-
 const remainingKcal = computed(() => {
   const q = targetKcal.value
   const consumed = metrics.value.consumedKilocalories || 0
@@ -216,7 +219,6 @@ const remainingKcal = computed(() => {
 })
 
 const currentDeficit = computed(() => {
-  // 修改为按公式结算的 TDEE - 已吃
   const tdee = metrics.value.tdeeKilocalories || (metrics.value.bmrKilocalories || 0)
   const consumed = metrics.value.consumedKilocalories || 0
   return tdee - consumed
@@ -263,9 +265,8 @@ const macroAlloc = computed(() => {
         carb: cGrams < 0 ? 0 : cGrams,
         q: q
     }
+    
 })
-
-
 
 const fetchData = async () => {
   try {
@@ -273,8 +274,7 @@ const fetchData = async () => {
     metrics.value = await resOverview.json()
   } catch (e) {
     console.error("加载数据失败:", e)
-  }
- finally {
+  } finally {
     loading.value = false
   }
 }
@@ -284,5 +284,3 @@ onMounted(() => {
   fetchConfig()
 })
 </script>
-
-
