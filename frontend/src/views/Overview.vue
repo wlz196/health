@@ -128,6 +128,15 @@
             </div>
          </div>
       </div>
+      
+      <!-- 🤖 AI 推荐下一餐 -->
+      <div class="bg-gradient-to-r from-orange-400 to-red-500 rounded-3xl p-5 shadow-sm text-white flex justify-between items-center cursor-pointer active:scale-95 transition-transform" @click="fetchAIRecommend">
+         <div>
+            <h3 class="font-bold text-sm mb-1">🤖 缺口怎么吃？点我定外卖</h3>
+            <p class="text-[10px] opacity-80">AI 营养师基于您的实时数字定制 3 餐方案</p>
+         </div>
+         <van-icon name="arrow" class="text-xl opacity-80" />
+      </div>
     </div>
 
     <!-- ⚙️ 设置基础代谢弹窗 -->
@@ -158,6 +167,33 @@
          <van-field v-model="bmrValue" type="digit" label="固定 BMR" placeholder="基础代谢卡路里" class="rounded-xl bg-gray-50 border-0" />
       </div>
     </van-dialog>
+
+    <!-- AI 推荐弹窗 -->
+    <van-action-sheet v-model:show="showRecommend" title="为您的缺口深度定制" class="!bg-gray-50 pb-8">
+       <div v-if="recommending" class="py-12 flex flex-col items-center justify-center text-gray-400">
+          <van-loading type="spinner" color="#f97316" size="24px" class="mb-3" />
+          <span class="text-xs">AI 正在运算最佳成分组合...</span>
+       </div>
+       <div v-else class="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+          <div v-if="recommendedMeals.length === 0" class="text-center py-6 text-gray-400 text-sm">未能成功获取方案，请稍后再试。</div>
+          <div v-for="(meal, idx) in recommendedMeals" :key="idx" class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+             <!-- 装饰条 -->
+             <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-red-500"></div>
+             
+             <h4 class="font-bold text-gray-800 text-sm mb-2">{{ meal.title }}</h4>
+             <p class="text-xs text-gray-500 leading-relaxed mb-3">{{ meal.description }}</p>
+             
+             <div class="flex justify-between items-center text-[10px] bg-gray-50 px-3 py-2 rounded-xl">
+                 <span class="text-gray-800 font-bold"><span class="text-orange-500">{{ meal.kcal }}</span> kcal</span>
+                 <div class="flex gap-2">
+                    <span class="text-rose-600 font-bold">🥩{{ meal.protein }}g</span>
+                    <span class="text-amber-600 font-bold">🥑{{ meal.fat }}g</span>
+                    <span class="text-sky-600 font-bold">🌾{{ meal.carb }}g</span>
+                 </div>
+             </div>
+          </div>
+       </div>
+    </van-action-sheet>
   </div>
 </template>
 
@@ -277,6 +313,41 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// === AI Recommender ===
+const showRecommend = ref(false)
+const recommending = ref(false)
+const recommendedMeals = ref([])
+
+const fetchAIRecommend = async () => {
+    showRecommend.value = true
+    recommending.value = true
+    
+    // Calculate gaps
+    const pLeft = Math.max(0, macroAlloc.value.protein - (metrics.value.consumedMacros?.protein || 0))
+    const fLeft = Math.max(0, macroAlloc.value.fat - (metrics.value.consumedMacros?.fat || 0))
+    const cLeft = Math.max(0, macroAlloc.value.carb - (metrics.value.consumedMacros?.carb || 0))
+    const kcalLeft = Math.max(0, targetKcal.value - (metrics.value.consumedKilocalories || 0))
+    
+    try {
+        const res = await fetch('/api/intake/recommend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                kcal_left: kcalLeft,
+                p_left: pLeft,
+                f_left: fLeft,
+                c_left: cLeft
+            })
+        })
+        const data = await res.json()
+        recommendedMeals.value = data
+    } catch (e) {
+        console.error("AI 推荐失败:", e)
+    } finally {
+        recommending.value = false
+    }
 }
 
 onMounted(() => {

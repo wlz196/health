@@ -274,6 +274,21 @@ class FoodLogResponse(BaseModel):
     macros: dict
     img_path: Optional[str]
 
+class RecommendRequest(BaseModel):
+    kcal_left: float
+    p_left: float
+    f_left: float
+    c_left: float
+
+@app.post("/api/intake/recommend")
+def recommend_meal_endpoint(req: RecommendRequest, current_user: User = Depends(get_current_user)):
+    """依据实时缺口调用智谱模型反向推荐 3 组食谱"""
+    from core.ai_nutritionist import recommend_meal
+    res = recommend_meal(req.kcal_left, req.p_left, req.f_left, req.c_left)
+    if not res:
+        raise HTTPException(status_code=500, detail="AI 推餐失败")
+    return res
+
 @app.get("/api/intake/saved_foods", response_model=list[SavedFoodItemResponse])
 def get_saved_foods(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """获取所有保存的快捷食物"""
@@ -435,19 +450,30 @@ def add_weight_log(item: WeightLogCreate, db: Session = Depends(get_db), current
     """记录今日体重"""
     today = item.date or get_beijing_now().date().isoformat()
     existing = db.query(WeightLog).filter(WeightLog.date == today, WeightLog.user_id == current_user.id).first()
+    
+    saved_log = None
     if existing:
         existing.weight = item.weight
         if item.day_type:
             existing.day_type = item.day_type
-        db.commit()
-        db.refresh(existing)
-        return existing
-        
-    new_log = WeightLog(date=today, weight=item.weight, day_type=item.day_type, user_id=current_user.id)
-    db.add(new_log)
+        saved_log = existing
+    else:
+        new_log = WeightLog(date=today, weight=item.weight, day_type=item.day_type, user_id=current_user.id)
+        db.add(new_log)
+        saved_log = new_log
+    
+    # 🔥 反向更新个人配置 (体重并重算 BMR)
+    config = db.query(UserConfig).filter(UserConfig.user_id == current_user.id).first()
+    if config:
+        config.weight = item.weight
+        # Mifflin-St Jeor formula calculation
+        if config.height and config.age and config.gender:
+            base_bmr = 10 * config.weight + 6.25 * config.height - 5 * config.age
+            config.bmr_kcal = int(base_bmr + 5) if config.gender == "male" else int(base_bmr - 161)
+            
     db.commit()
-    db.refresh(new_log)
-    return new_log
+    db.refresh(saved_log)
+    return saved_log
 
 # === 无氧负重训练接口 ===
 class AnaerobicLogCreate(BaseModel):

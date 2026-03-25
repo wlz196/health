@@ -141,3 +141,52 @@ def identify_food_text(description: str):
         return res_json
     except Exception as e:
         return {"error": f"AI 文本解析失败，返回原始内容: {raw_text}"}
+
+
+def recommend_meal(kcal_left: float, p_left: float, f_left: float, c_left: float) -> list:
+    """
+    根据给定的热量和营养素缺口，调用大模型推荐 3 套膳食方案
+    """
+    zhipu = get_zhipu_client()
+    if not zhipu:
+        return []
+
+    prompt = f'''
+作为资深减脂教练和注册营养师，请为用户推荐【下一餐】的饮食方案。
+
+当前用户的营养素【缺口】如下：
+- 可用热量：{kcal_left} kcal
+- 需补充蛋白质：{p_left} g
+- 需补充脂肪：{f_left} g
+- 需补充碳水化合物：{c_left} g
+
+要求：
+1. 请提供 3 个不同的餐饮组合方案（例如：减脂快手餐，便利店拼盘，放纵欺骗餐等）。
+2. 每套方案的总营养素尽可能贴近上述缺口。
+3. 返回的结果必须是一个严格的 JSON 数组结构，无需包含任何 Markdown 语法标签（例如 ```json）以及其他废话。
+
+输出 JSON 格式要求：
+[
+  {{
+    "title": "方案一：xxx",
+    "description": "具体的食物组合描述，含大致克数，如：150g鸡胸肉+200g水煮菜+100g红薯",
+    "kcal": 300,
+    "protein": 30,
+    "fat": 10,
+    "carb": 20
+  }}
+]
+'''
+    try:
+        response = zhipu.chat.completions.create(
+            model="glm-4.7-flash",
+            messages=[{"role": "user", "content": prompt}],
+            thinking={"type": "disabled"}
+        )
+        raw_text = response.choices[0].message.content.strip()
+        if raw_text.startswith("```json"): raw_text = raw_text[7:]
+        if raw_text.endswith("```"): raw_text = raw_text[:-3]
+        return json.loads(raw_text)
+    except Exception as e:
+        print(f"推荐餐食请求失败: {e}")
+        return []
