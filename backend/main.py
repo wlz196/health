@@ -144,13 +144,98 @@ def get_daily_overview(db: Session = Depends(get_db), current_user: User = Depen
     multiplier = config.activity_multiplier if config and config.activity_multiplier else 1.2
     tdee_kcal = round(local_bmr * multiplier)
     
+    # 🌟 连胜系统 (Perfect Streak)
+    from datetime import timedelta
+    streak = 0
+    check_date = get_beijing_now().date()
+    
+    while True:
+        d_str = check_date.isoformat()
+        d_logs = db.query(FoodLogs).filter(FoodLogs.date == d_str, FoodLogs.user_id == current_user.id).all()
+        d_consumed = sum(l.kcal for l in d_logs) if d_logs else 0
+        
+        if not d_logs and check_date == get_beijing_now().date():
+            # 今天还没吃饭打卡，不中断昨天的连胜
+            check_date -= timedelta(days=1)
+            continue
+            
+        if not d_logs:
+            # 一旦没打卡直接断开
+            break
+            
+        if d_consumed > tdee_kcal:
+            # 爆表热量也断开连胜
+            if check_date == get_beijing_now().date():
+                streak = 0
+            break
+            
+        streak += 1
+        check_date -= timedelta(days=1)
+
     return {
         "date": today,
         "bmrKilocalories": local_bmr,
         "tdeeKilocalories": tdee_kcal,
         "consumedKilocalories": local_consumed,
-        "consumedMacros": consumed_macros
+        "consumedMacros": consumed_macros,
+        "current_streak": streak
     }
+
+@app.get("/api/overview/weekly_roast")
+def get_weekly_roast(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """获取过去 7 天的饮食统计，交由智谱大模型生成毒舌/夸奖点评"""
+    from datetime import timedelta
+    import json
+    end_date = get_beijing_now().date()
+    start_date = end_date - timedelta(days=6)
+    
+    logs = db.query(FoodLogs).filter(
+        FoodLogs.user_id == current_user.id,
+        FoodLogs.date >= start_date.isoformat(),
+        FoodLogs.date <= end_date.isoformat()
+    ).all()
+    
+    # 按照日期分组宏量
+    daily_stats = {}
+    for i in range(7):
+        d_str = (start_date + timedelta(days=i)).isoformat()
+        daily_stats[d_str] = {"kcal": 0, "p": 0, "f": 0, "c": 0}
+        
+    for log in logs:
+        if log.date in daily_stats:
+            daily_stats[log.date]["kcal"] += log.kcal
+            try:
+                m = json.loads(log.macros) if log.macros else {}
+                daily_stats[log.date]["p"] += m.get("protein", 0)
+                daily_stats[log.date]["f"] += m.get("fat", 0)
+                daily_stats[log.date]["c"] += m.get("carb", 0)
+            except:
+                pass
+                
+    # 构造成纯文本发给大模型
+    report_lines = []
+    for d, s in daily_stats.items():
+        if s["kcal"] == 0:
+            report_lines.append(f"{d}: 未打卡")
+        else:
+            report_lines.append(f"{d}: 摄入热量 {s['kcal']}kcal (蛋白{s['p']}g, 脂肪{s['f']}g, 碳水{s['c']}g)")
+    
+    weights = db.query(WeightLog).filter(
+        WeightLog.user_id == current_user.id,
+        WeightLog.date >= start_date.isoformat()
+    ).order_by(WeightLog.date.asc()).all()
+    
+    w_line = "无体重记录变化"
+    if weights and len(weights) > 1:
+        w_line = f"体重变化: 从 {weights[0].weight}kg (在{weights[0].date}) 变为 {weights[-1].weight}kg (在{weights[-1].date})"
+        
+    final_report = "近7天饮食记录:\n" + "\n".join(report_lines) + "\n\n体重变化:\n" + w_line
+    
+    from core.ai_nutritionist import generate_weekly_roast
+    roast_text = generate_weekly_roast(final_report)
+    
+    return {"roast": roast_text}
+
 
 # endpoint /api/activities 已移除，前端已全面解耦 Garmin 活动流。
 

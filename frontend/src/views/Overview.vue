@@ -1,7 +1,17 @@
 <template>
   <div class="p-4 bg-gray-50 min-h-screen">
     <div class="flex justify-between items-center mb-6 mt-2">
-      <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">我的今日</h1>
+      <div class="flex flex-col gap-1">
+          <h1 class="text-3xl font-extrabold text-gray-800 tracking-tight">我的今日</h1>
+          <!-- 🔥 连胜徽章 -->
+          <div v-if="!loading && metrics.current_streak > 0" class="flex items-center gap-1.5 w-max bg-gradient-to-r from-orange-100 to-red-100 px-2 py-0.5 rounded-full border border-orange-200 shadow-sm animate-pulse-slow">
+            <span class="text-[12px]">🔥</span>
+            <span class="font-extrabold text-orange-600 text-[10px] italic pr-1 tracking-wider">{{ metrics.current_streak }} 天完美连胜</span>
+          </div>
+          <div v-else-if="!loading" class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full w-max border border-gray-200/50">
+            🧊 记录今日点燃打卡连胜火种
+          </div>
+      </div>
       <div v-if="loading" class="text-sm text-gray-500 flex items-center">
         <van-loading size="16px" class="mr-1"/> 同步中
       </div>
@@ -129,6 +139,14 @@
          </div>
       </div>
       
+      <!-- 💬 AI 周末毒舌点评 -->
+      <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-3xl p-5 shadow-sm text-white flex justify-between items-center cursor-pointer active:scale-95 transition-transform mb-4" @click="fetchRoast">
+         <div>
+            <h3 class="font-bold text-sm mb-1">💬 AI 教练本周复盘</h3>
+            <p class="text-[10px] opacity-80">点击查收您过去 7 天的专属毒舌/夸奖点评</p>
+         </div>
+         <van-icon name="envelop-o" class="text-2xl opacity-80" />
+      </div>
       <!-- 🤖 AI 推荐下一餐 -->
       <div class="bg-gradient-to-r from-orange-400 to-red-500 rounded-3xl p-5 shadow-sm text-white flex justify-between items-center cursor-pointer active:scale-95 transition-transform" @click="fetchAIRecommend">
          <div>
@@ -191,6 +209,20 @@
                     <span class="text-sky-600 font-bold">🌾{{ meal.carb }}g</span>
                  </div>
              </div>
+          </div>
+       </div>
+    </van-action-sheet>
+
+    <!-- 💬 AI 教练毒舌点评弹窗 -->
+    <van-action-sheet v-model:show="showRoast" title="本周私教点评" class="!bg-gray-50 pb-8">
+       <div v-if="roasting" class="py-12 flex flex-col items-center justify-center text-gray-400">
+          <van-loading type="spinner" color="#4f46e5" size="24px" class="mb-3" />
+          <span class="text-xs">教练正在翻阅您近 7 天的数据...</span>
+       </div>
+       <div v-else class="p-6">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-indigo-100 relative">
+             <div class="absolute -top-3 -left-3 text-4xl">💬</div>
+             <p class="text-sm text-gray-700 leading-relaxed font-medium mt-2 whitespace-pre-wrap">{{ roastText }}</p>
           </div>
        </div>
     </van-action-sheet>
@@ -347,6 +379,25 @@ const fetchAIRecommend = async () => {
         console.error("AI 推荐失败:", e)
     } finally {
         recommending.value = false
+    }
+}
+
+// === AI Weekly Roast ===
+const showRoast = ref(false)
+const roasting = ref(false)
+const roastText = ref("")
+
+const fetchRoast = async () => {
+    showRoast.value = true
+    roasting.value = true
+    try {
+        const res = await fetch('/api/overview/weekly_roast')
+        const data = await res.json()
+        roastText.value = data.roast
+    } catch(e) {
+        roastText.value = "获取教练点评失败，可能是网络问题。"
+    } finally {
+        roasting.value = false
     }
 }
 

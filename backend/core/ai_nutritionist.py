@@ -190,3 +190,34 @@ def recommend_meal(kcal_left: float, p_left: float, f_left: float, c_left: float
     except Exception as e:
         print(f"推荐餐食请求失败: {e}")
         return []
+
+def generate_weekly_roast(stats_text: str) -> str:
+    """
+    接收用户过去 7 天的饮食和体重数据报告，使用大模型生成毒舌减脂点评。
+    """
+    zhipu = get_zhipu_client()
+    if not zhipu:
+        return "未能连接到智谱 AI，教练去休假了。"
+
+    prompt = f'''
+你现在是一位世界顶级的“毒舌但不失温柔的减脂私教教练”。
+我将为你提供我（用户）过去 7 天内的健康数据总结报告：
+{stats_text}
+
+请根据这份报告，给我写一段 100-150 字左右的本周复盘。
+要求：
+1. 语气：像真正的教练一样，表现不佳时狠狠地“骂醒”我（使用讽刺、幽默、一针见血的表达）；如果表现极好，也要不吝略带傲娇地夸奖我。
+2. 洞察：指出我宏量营养素缺口的致命软肋（比如碳水太多、蛋白质太少），并针对下周给出一句黄金建议。
+3. 结尾：用一句振奋人心的口号结尾。
+4. 格式：不要任何开场白或啰嗦，直接给出点评正文。
+'''
+    try:
+        response = zhipu.chat.completions.create(
+            model="glm-4.7-flash",
+            messages=[{"role": "user", "content": prompt}],
+            thinking={"type": "disabled"}
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"生成点评失败: {e}")
+        return "网络信号微弱，教练暂时开不了口。"
